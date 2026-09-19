@@ -1,9 +1,13 @@
 from config import INPUT_FILE
 from extract import extract_data
 from load import load_data
+from logger import get_logger
 from spark_session import create_spark_session
 from transform import transform_data
 from validate import validate_data
+
+
+logger = get_logger("ecommerce_pipeline")
 
 
 def run_pipeline():
@@ -12,34 +16,39 @@ def run_pipeline():
     spark = create_spark_session()
 
     try:
-        print("=== E-Commerce ETL Pipeline Started ===")
+        logger.info("ETL pipeline started.")
 
         # 1. Extract
-        print("1. Extracting raw data...")
+        logger.info("Starting data extraction.")
         raw_df = extract_data(spark, INPUT_FILE)
-        print(f"Raw records: {raw_df.count()}")
+        logger.info("Raw records: %s", raw_df.count())
 
         # 2. Transform
-        print("2. Transforming data...")
+        logger.info("Starting data transformation.")
         transformed_df = transform_data(raw_df)
-        print(f"Transformed records: {transformed_df.count()}")
+        logger.info(
+            "Transformed records: %s",
+            transformed_df.count()
+        )
 
         # 3. Validate
-        print("3. Validating data...")
+        logger.info("Starting data validation.")
         validate_data(transformed_df)
+        logger.info("Data validation passed.")
 
         # 4. Load
-        print("4. Loading data into PostgreSQL...")
+        logger.info("Loading data into PostgreSQL.")
         load_data(transformed_df)
 
-        print("=== Pipeline Completed Successfully ===")
+        logger.info("ETL pipeline completed successfully.")
 
-    except Exception as error:
-        print(f"=== Pipeline Failed: {error} ===")
+    except Exception:
+        logger.exception("ETL pipeline failed.")
         raise
 
     finally:
         spark.stop()
+        logger.info("Spark session stopped.")
 
 
 if __name__ == "__main__":
